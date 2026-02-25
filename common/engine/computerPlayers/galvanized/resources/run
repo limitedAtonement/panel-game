@@ -1,0 +1,9 @@
+#!/bin/bash
+
+runcmd=(./myapp)
+if [[ "$#" -gt 0 ]]; then
+    cgdb --args "${runcmd[@]}"
+else
+    "${runcmd[@]}"
+fi
+

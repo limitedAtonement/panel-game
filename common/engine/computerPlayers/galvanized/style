@@ -1,0 +1,2 @@
+{BasedOnStyle:  WebKit, Cpp11BracedListStyle: true, PointerAlignment: Middle, SortIncludes: false, BreakConstructorInitializersBeforeComma: false, BreakBeforeBraces: Allman}
+
