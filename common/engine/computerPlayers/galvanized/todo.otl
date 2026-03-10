@@ -1,0 +1,2 @@
+Change panel states to enum
+Return optional<panel *> rather than copying the panels

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# To run particular test cases, try
+#    ./watch-test --gtest_filter="*vertical_chasm"
+
+run_tests() {
+    cd dist|| exit;
+    ./tests "$@";
+}
+
+while true; do
+    ./mk && ( run_tests "$@" );
+    sleep 1;
+    inotifywait -r -e close_write,moved_to **/*.cpp **/*.hpp Makefile;
+    sleep 2;
+done;
+

@@ -43,6 +43,7 @@ function(self, args)
   assert(args.player)
   self.player = args.player
   self.stackInteraction = args.stackInteraction
+  self.lastDisplacementSeen = -1
 
   assert(self.engine.TYPE == "Stack")
   self.engine.is_local = self.player.isLocal

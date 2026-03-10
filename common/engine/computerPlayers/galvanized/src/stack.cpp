@@ -4,33 +4,61 @@
 #include <sstream>
 
 stack::stack(int height, int width)
-    : shapes(height * width, 0), height(height), width(width)
+    : panels(height * width, panel{}), _height(height), _width(width)
 {
 }
 
-unsigned stack::get_shape(int row, int col) const
+stack::stack(void)
+: _height{0}, _width{0}
 {
-    return shapes[row * width + col];
 }
 
-void stack::set_shape(int row, int col, unsigned shape)
+std::optional<panel> stack::get_panel(spot const & s) const
 {
-    shapes[row * width + col] = shape;
+    if (s.row < 0 || s.row >= _height || s.col < 0 || s.col >= _width)
+    {
+        LOG("Invalid spot: " + std::to_string(s.row) + ", " + std::to_string(s.col) + " for stack of height " +
+                std::to_string(_height) + " and width " + std::to_string(_width));
+        return {};
+    }
+    return panels[s.row * _width + s.col];
+}
+
+void stack::set_panel(int row, int col, panel && p)
+{
+    std::string const state{p.state};
+    panels[row * _width + col] = std::move(p);
+    //if (row == 0)
+    //{
+        //if (col == 0 && state != "dimmed")
+            //LOG("Panel at " + std::to_string(row) + ", " + std::to_string(col) + " state " + state);
+    //}
+    //else if (state != "normal")
+        //LOG("Panel at " + std::to_string(row) + ", " + std::to_string(col) + " state " + state);
 }
 
 void stack::print(void) const
 {
     std::ostringstream str;
     str << "stack:\n";
-    for (int row = height-1; row >= 0; --row)
+    for (int row = _height-1; row >= 0; --row)
     {
         str << "  row " << std::setw(2) << std::setfill('0') << std::fixed << row + 1 << ":";
-        for (int col = 0; col < width; ++col)
+        for (int col = 0; col < _width; ++col)
         {
-            str << " " << shapes[row * width + col];
+            str << " " << panels[row * _width + col].color;
         }
         str << "\n";
     }
     LOG(str.str());
 }
 
+int stack::height(void) const
+{
+    return _height;
+}
+
+int stack::width(void) const
+{
+    return _width;
+}

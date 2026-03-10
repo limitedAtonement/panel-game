@@ -17,12 +17,20 @@ function PlayerStack:send_controls()
     --print("send_controls returned immediately")
     return
   end
-  local input, taunt = galvanized.getInput(self.engine)
-  if input ~= 'A' then
-    print("galvanized input=")
-    print(input)
-    print("(end galvanized output)")
+  if self.lastDisplacementSeen ~= self.engine.displacement then
+    -- print("displacement changed to "..self.engine.displacement)
+    self.lastDisplacementSeen = self.engine.displacement
   end
+  local input, taunt = 'A', 0
+  -- countdown and first frame are not good times to send inputs
+  if not self.engine.do_countdown then
+    input, taunt = galvanized.getInput(self.engine)
+  end
+  --if input ~= 'A' then
+    --print("galvanized input=")
+    --print(input)
+    --print("(end galvanized output)")
+  --end
   GAME.netClient:sendInput(input)
   if taunt == 1 then
     self.taunt_up = math.random(#self.character.sounds.taunt_up.sources)
