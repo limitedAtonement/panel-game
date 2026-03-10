@@ -115,7 +115,7 @@ TEST(Algorithms, find_three_blocks_vertical_ignore_dimmed)
         }
     }
     std::optional<std::array<spot, 3>> spots {find_three_blocks_vertical(st, {1,0})};
-    EXPECT_TRUE(spots);
+    ASSERT_TRUE(spots);
     EXPECT_EQ((*spots)[0], spot(1,0));
     EXPECT_EQ((*spots)[1], spot(2,1));
     EXPECT_EQ((*spots)[2], spot(3,2));
@@ -147,7 +147,7 @@ TEST(Algorithms, can_get_to_same_column_simple)
 {
     stack st {get_stack()};
     std::optional<unsigned> col {can_get_to_same_column(st, std::array<spot, 3>{{{1,5}, {2,4}, {3,3}}})};
-    EXPECT_TRUE(col);
+    ASSERT_TRUE(col);
     EXPECT_EQ(*col, 4);
 }
 
@@ -161,7 +161,7 @@ TEST(Algorithms, can_get_to_same_column_chasm_right)
     }
     // The average of these blocks is around column 3, but the top one can't get there because of the chasm.
     std::optional<unsigned> col {can_get_to_same_column(st, std::array<spot, 3>{{{4,0}, {5,5}, {6,4}}})};
-    EXPECT_TRUE(col);
+    ASSERT_TRUE(col);
     EXPECT_EQ(*col, 4);
 }
 
@@ -179,7 +179,7 @@ TEST(Algorithms, can_get_to_same_column_chasm_left)
     st.set_panel(5, 5, {3, "normal"});
     // The average of these blocks is around column 4 or 5, but the top one has to stay left of the chasm
     std::optional<unsigned> col {can_get_to_same_column(st, std::array<spot, 3>{{{4,5}, {5,5}, {6,2}}})};
-    EXPECT_TRUE(col);
+    ASSERT_TRUE(col);
     EXPECT_EQ(*col, 2);
 }
 
@@ -195,3 +195,32 @@ TEST(Algorithms, cant_get_there)
     std::optional<unsigned> col {can_get_to_same_column(st, std::array<spot, 3>{{{6,1}, {7,0}, {8,5}}})};
     EXPECT_FALSE(col);
 }
+
+TEST(Algorithms, find_three_blocks_horizontal_simple)
+{
+    stack st {get_stack()};
+    st.set_panel(3, 0, {1, "normal"});
+    // (3,3) is already 1
+    st.set_panel(3, 5, {1, "normal"});
+    std::optional<std::array<spot, 3>> spots {find_three_blocks_horizontal(st, {3,0})};
+    ASSERT_TRUE(spots);
+    EXPECT_EQ((*spots)[0], spot(3,0));
+    EXPECT_EQ((*spots)[1], spot(3,3));
+    EXPECT_EQ((*spots)[2], spot(3,5));
+}
+
+TEST(Algorithms, find_three_blocks_horizontal_chasm)
+{
+    stack st {get_stack()};
+    // Create a chasm...
+    for (unsigned row{5}; row < rows; ++row)
+    {
+        st.set_panel(row, 3, {0, "normal"});
+    }
+    st.set_panel(9, 0, {2, "normal"});
+    st.set_panel(9, 1, {2, "normal"});
+    // The match is at 9,4, but there is a chasm separating
+    std::optional<std::array<spot, 3>> spots {find_three_blocks_horizontal(st, {9,1})};
+    ASSERT_FALSE(spots);
+}
+

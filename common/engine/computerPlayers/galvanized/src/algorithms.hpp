@@ -6,6 +6,7 @@
 #include <iostream>
 
 std::optional<std::array<spot, 3>> find_three_blocks_vertical(stack const &, spot const & start_spot);
+std::optional<std::array<spot, 3>> find_three_blocks_horizontal(stack const &, spot const & start_spot);
 // Only looks at the start_spot row.
 bool can_get_there(stack const &, const spot & whence, const spot & whither);
 

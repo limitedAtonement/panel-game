@@ -15,7 +15,6 @@ std::optional<std::array<spot, 3>> find_three_blocks_vertical(stack const & st, 
         // Empty spot, do nothing
         return {};
     }
-    bool stop{false};
     // Check for all the matching blocks above the start spot.
     std::array<std::vector<spot>, 2> potential_blocks;
     for (int row_diff{1}; row_diff < 3 && start_spot.row + row_diff < st.height(); ++row_diff)
@@ -41,6 +40,42 @@ std::optional<std::array<spot, 3>> find_three_blocks_vertical(stack const & st, 
             if (dest_column)
                 return {{start_spot, potential_blocks[0][i], potential_blocks[1][j]}};
         }
+    }
+    return {};
+}
+
+std::optional<std::array<spot, 3>> find_three_blocks_horizontal(stack const & st, spot const & start_spot)
+{
+    std::optional<panel> const start_panel{st.get_panel(start_spot)};
+    if (!start_panel)
+    {
+        LOG("WARNING No panel at start spot: " + start_spot.to_string());
+        return {};
+    }
+    if (!start_panel->color)
+    {
+        // Empty spot, do nothing
+        return {};
+    }
+    std::vector<spot> found_blocks;
+    for (int col{0}; col < st.width(); ++col)
+    {
+        if (col == start_spot.col)
+            continue;
+        spot const current_spot {start_spot.row, col};
+        std::optional<panel> potential_panel {st.get_panel(current_spot)};
+        // No effort is made to stay on the board, etc.
+        if (!potential_panel)
+            break;
+        if (potential_panel->color != start_panel->color)
+            continue;
+        // If the current spot can get to the start spot, it's good enough
+        // Of course, you won't actually want to move it all the way to the start spot
+        if (!can_get_there(st, start_spot, current_spot))
+            continue;
+        found_blocks.push_back(current_spot);
+        if (found_blocks.size() == 2)
+            return {{start_spot, found_blocks[0], found_blocks[1]}};
     }
     return {};
 }
