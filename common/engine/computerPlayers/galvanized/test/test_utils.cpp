@@ -224,3 +224,243 @@ TEST(Algorithms, find_three_blocks_horizontal_chasm)
     ASSERT_FALSE(spots);
 }
 
+TEST(Algorithms, move_horizontal_blocks_two_blocks_in)
+{
+    // x--x--
+    std::vector<spot> source_spots {{3,0}, {3,3}};
+    // -xx---
+    std::vector<spot> target_spots {{3,1}, {3,2}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 2);
+    bool got_1{false};
+    bool got_2{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+            got_1 = true;
+        if (flip == spot(3,2))
+            got_2 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, move_horizontal_blocks_two_close_blocks_right)
+{
+    // xx----
+    std::vector<spot> source_spots {{3,0}, {3,1}};
+    // -xx---
+    std::vector<spot> target_spots {{3,1}, {3,2}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 2);
+    bool got_1{false};
+    bool got_2{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+        {
+            EXPECT_TRUE(got_2) << "We must flip the right side first";
+            got_1 = true;
+        }
+        if (flip == spot(3,1))
+            got_2 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, move_horizontal_blocks_two_close_blocks_left)
+{
+    // -xx---
+    std::vector<spot> source_spots {{3,1}, {3,2}};
+    // xx----
+    std::vector<spot> target_spots {{3,0}, {3,1}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 2);
+    bool got_1{false};
+    bool got_2{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+            got_1 = true;
+        if (flip == spot(3,1))
+        {
+            EXPECT_TRUE(got_1) << "We must flip the left side first";
+            got_2 = true;
+        }
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, move_horizontal_blocks_two_blocks_out)
+{
+    // _xx___
+    std::vector<spot> source_spots {{3,1}, {3,2}};
+    // x--x--
+    std::vector<spot> target_spots {{3,0}, {3,3}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 2);
+    bool got_1{false};
+    bool got_2{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+            got_1 = true;
+        if (flip == spot(3,2))
+            got_2 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, move_horizontal_blocks_two_blocks_right)
+{
+    // x _ x _ _ _
+    std::vector<spot> source_spots {{3,0}, {3,2}};
+    // _ x _ x _ _
+    std::vector<spot> target_spots {{3,1}, {3,3}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 2);
+    bool got_1{false};
+    bool got_2{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+            got_1 = true;
+        if (flip == spot(3,2))
+            got_2 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, move_horizontal_blocks_two_blocks_left)
+{
+    // _ x _ x _ _
+    std::vector<spot> source_spots {{3,1}, {3,3}};
+    // x _ x _ _ _
+    std::vector<spot> target_spots {{3,0}, {3,2}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 2);
+    bool got_1{false};
+    bool got_2{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+            got_1 = true;
+        if (flip == spot(3,2))
+            got_2 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, move_horizontal_blocks_3_blocks_in)
+{
+    // x _ _ x _ x
+    std::vector<spot> source_spots {{3,0}, {3,3}, {3,5}};
+    // _ x x _ x _
+    std::vector<spot> target_spots {{3,1}, {3,2}, {3,4}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 3);
+    bool got_1{false};
+    bool got_2{false};
+    bool got_3{false};
+    for (auto const & flip : flips)
+    {
+        std::cout << " flipping at "  << flip.col  << "\n";
+        if (flip == spot(3,0))
+            got_1 = true;
+        if (flip == spot(3,2))
+            got_2 = true;
+        if (flip == spot(3,4))
+            got_3 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+    EXPECT_TRUE(got_3);
+}
+
+TEST(Algorithms, move_horizontal_blocks_3_blocks_out)
+{
+    // _ x _ x x _
+    std::vector<spot> source_spots {{3,1}, {3,3}, {3,4}};
+    // x _ x _ _ x
+    std::vector<spot> target_spots {{3,0}, {3,2}, {3,5}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 3);
+    bool got_1{false};
+    bool got_2{false};
+    bool got_3{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+            got_1 = true;
+        if (flip == spot(3,2))
+            got_2 = true;
+        if (flip == spot(3,4))
+            got_3 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+    EXPECT_TRUE(got_3);
+}
+
+TEST(Algorithms, move_horizontal_blocks_3_blocks_right)
+{
+    // x x _ _ x _
+    // _ x x _ _ x
+    std::vector<spot> source_spots {{3,0}, {3,1}, {3,4}};
+    std::vector<spot> target_spots {{3,1}, {3,2}, {3,5}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 3);
+    bool got_1{false};
+    bool got_2{false};
+    bool got_3{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+        {
+            EXPECT_TRUE(got_2) << "We must flip the right side before flipping the outside";
+            got_1 = true;
+        }
+        if (flip == spot(3,1))
+            got_2 = true;
+        if (flip == spot(3,4))
+            got_3 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+    EXPECT_TRUE(got_3);
+}
+
+TEST(Algorithms, move_horizontal_blocks_3_blocks_left)
+{
+    // _ x x _ _ x
+    // x x _ _ x _
+    std::vector<spot> source_spots {{3,1}, {3,2}, {3,5}};
+    std::vector<spot> target_spots {{3,0}, {3,1}, {3,4}};
+    std::vector<spot> flips {move_horizontal_blocks(source_spots, target_spots)};
+    EXPECT_EQ(flips.size(), 3);
+    bool got_1{false};
+    bool got_2{false};
+    bool got_3{false};
+    for (auto const & flip : flips)
+    {
+        if (flip == spot(3,0))
+        {
+            got_1 = true;
+        }
+        if (flip == spot(3,1))
+        {
+            EXPECT_TRUE(got_1) << "We must flip the left side before flipping the inside";
+            got_2 = true;
+        }
+        if (flip == spot(3,4))
+            got_3 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+    EXPECT_TRUE(got_3);
+}

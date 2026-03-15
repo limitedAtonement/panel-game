@@ -17,6 +17,7 @@ struct spot
 
 struct plan
 {
+    // A flip spot is the left side of the cursor when the flip happens
     std::deque<spot> spot_flips;
     std::string to_string(void) const;
 };

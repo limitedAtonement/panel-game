@@ -38,8 +38,6 @@ private:
     void calculation_func(void);
     void calculate_impl(void);
     void find_three_blocks(void);
-    std::optional<std::array<spot, 3>> get_three_blocks_target(std::array<spot, 3> const &);
-    std::optional<plan> create_plan(std::array<spot, 3> const &, std::array<spot, 3> const &);
     void wait_for_plan_to_complete(void);
     void advance_stack(void);
 };

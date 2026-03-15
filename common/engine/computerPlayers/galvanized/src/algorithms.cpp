@@ -1,5 +1,4 @@
 #include "algorithms.hpp"
-#include "logging.hpp"
 
 // Returns the three blocks that can be swapped to make a vertical match.
 std::optional<std::array<spot, 3>> find_three_blocks_vertical(stack const & st, spot const & start_spot)
@@ -80,6 +79,15 @@ std::optional<std::array<spot, 3>> find_three_blocks_horizontal(stack const & st
     return {};
 }
 
+std::optional<plan> bring_together_horizontal(std::array<spot, 3> const & source_blocks)
+{
+    auto sorted_blocks{source_blocks};
+    spot const leftmost_block{*std::min_element(sorted_blocks.begin(), sorted_blocks.end(), [](spot const & a, spot const & b) { return a.col < b.col; })};
+    std::array<spot, 3> target_blocks{sorted_blocks[0], {sorted_blocks[0].row, sorted_blocks[0].col+1},
+            {sorted_blocks[0].row, sorted_blocks[0].col+2}};
+    return create_plan(sorted_blocks, target_blocks);
+}
+
 static bool good_base(panel const & p)
 {
     return p.color != 0 && p.state != "falling" && p.state != "popped";
@@ -134,4 +142,148 @@ int increment_column_diff(int old_column_diff)
     if (old_column_diff < 0)
         return old_column_diff - old_column_diff*2+1;
     return old_column_diff - old_column_diff*2;
+}
+
+std::vector<spot> move_panel(spot const & whence, spot const & whither)
+{
+    std::vector<spot> ret;
+    const int num_flips = whence.col - whither.col;
+    if (num_flips == 0)
+        return {};
+    const bool flip_left = num_flips > 0;
+    int flip_spot = whence.col;
+    if (flip_left)
+    {
+        flip_spot -= 1;
+        while (flip_spot >= whither.col)
+        {
+            const spot temp_flip_spot {whence.row, flip_spot};
+            // The flip_spot is the left side of the cursor
+            ret.push_back(temp_flip_spot);
+            --flip_spot;
+        }
+    } else {
+        while (flip_spot < whither.col)
+        {
+            const spot temp_flip_spot {whence.row, flip_spot};
+            // The flip_spot is the left side of the cursor
+            ret.push_back(temp_flip_spot);
+            ++flip_spot;
+        }
+    }
+    return ret;
+}
+
+// A recursive algorithm:
+// 1. If there are 2 or fewer blocks, move them into place naively
+// 2. If there are three or more blocks
+//    a. Call this algorithm with the outer two blocks removed (or only remove the rightmost if there are only three)
+//    b. Move the outer blocks into place naively
+std::vector<spot> move_horizontal_blocks(std::vector<spot> const & source_spots,
+            std::vector<spot> const & target_spots)
+{
+    if (source_spots.size() != target_spots.size())
+    {
+        LOG("ERROR: move_horizontal_blocks: source_spots and target_spots have different sizes");
+        return {};
+    }
+    if (source_spots.empty())
+    {
+        LOG("ERROR: move_horizontal_blocks: source_spots and target_spots are empty");
+        return {};
+    }
+    std::vector<spot> ret{0};
+    std::vector<spot> sorted_source_spots {source_spots};
+    std::vector<spot> sorted_target_spots {target_spots};
+    std::sort(sorted_source_spots.begin(), sorted_source_spots.end(), [](spot const & a, spot const & b)
+                { return a.col < b.col; });
+    std::sort(sorted_target_spots.begin(), sorted_target_spots.end(), [](spot const & a, spot const & b)
+                { return a.col < b.col; });
+    std::cout << "Moving from ";
+    unsigned spot_i{0};
+    for (unsigned c{0}; c < 6; ++c)
+    {
+        if (sorted_source_spots.size() > spot_i && sorted_source_spots[spot_i].col == static_cast<int>(c))
+        {
+            ++spot_i;
+            std::cout << 'x';
+        }
+        else
+            std::cout << '-';
+    }
+    std::cout <<'\n';
+    std::cout << "Moving to   ";
+    spot_i = 0;
+    for (unsigned c{0}; c < 6; ++c)
+    {
+        if (sorted_target_spots.size() > spot_i && sorted_target_spots[spot_i].col == static_cast<int>(c))
+        {
+            ++spot_i;
+            std::cout << 'x';
+        }
+        else
+            std::cout << '-';
+    }
+    std::cout << '\n';
+    bool left_spot_moving_left {sorted_source_spots.front().col > sorted_target_spots.front().col};
+    // If we can move leftmost to the left, do it.
+    if (left_spot_moving_left)
+    {
+        std::cout << "left moving left...\n";
+        ret = move_panel(sorted_source_spots.front(), sorted_target_spots.front());
+        if (sorted_source_spots.size() == 1)
+            return ret;
+        sorted_source_spots.erase(sorted_source_spots.begin());
+        sorted_target_spots.erase(sorted_target_spots.begin());
+        std::vector<spot> temp_moves{move_horizontal_blocks(sorted_source_spots, sorted_target_spots)};
+        std::copy(temp_moves.begin(), temp_moves.end(), std::back_inserter(ret));
+        return ret;
+    }
+    bool right_spot_moving_right {sorted_source_spots.back().col < sorted_target_spots.back().col};
+    // If we can move rightmost to the right, do it.
+    if (right_spot_moving_right)
+    {
+        std::cout << "right moving right...\n";
+        ret = move_panel(sorted_source_spots.back(), sorted_target_spots.back());
+        if (sorted_source_spots.size() == 1)
+            return ret;
+        sorted_source_spots.pop_back();
+        sorted_target_spots.pop_back();
+        std::vector<spot> temp_moves{move_horizontal_blocks(sorted_source_spots, sorted_target_spots)};
+        std::copy(temp_moves.begin(), temp_moves.end(), std::back_inserter(ret));
+        return ret;
+    }
+    if (sorted_source_spots.size() <= 2)
+    {
+        std::cout << " Only " << sorted_source_spots.size() << " spots to move...doing it\n";
+        // Move the left spot to its place
+        ret = move_panel(sorted_source_spots.front(), sorted_target_spots.front());
+        if (sorted_source_spots.size() > 1)
+        {
+            std::cout << "   greater than one, doing the second.\n";
+            // Move the right spot to its place
+            std::vector<spot> temp_moves {move_panel(sorted_source_spots.back(), sorted_target_spots.back())};
+            std::copy(temp_moves.begin(), temp_moves.end(), std::back_inserter(ret));
+        }
+    }
+    else
+    {
+        // trim down the operation to do inner moves without messing things up.
+        std::vector<spot> send_source_spots {sorted_source_spots};
+        std::vector<spot> send_target_spots {sorted_target_spots};
+        // Trim off the leftmost spot
+        send_source_spots.pop_back();
+        send_target_spots.pop_back();
+        send_source_spots.erase(send_source_spots.begin());
+        send_target_spots.erase(send_target_spots.begin());
+        std::cout << "    sending " << send_source_spots.size() << " spots to be placed...\n";
+        ret = move_horizontal_blocks(send_source_spots, send_target_spots);
+        std::cout << "   moving the outer two blocks to finish up this iteration\n";
+        // Now put the outer blocks into position
+        std::vector<spot> temp_moves = move_panel(sorted_source_spots.front(), sorted_target_spots.front());
+        std::copy(temp_moves.begin(), temp_moves.end(), std::back_inserter(ret));
+        temp_moves = move_panel(sorted_source_spots.back(), sorted_target_spots.back());
+        std::copy(temp_moves.begin(), temp_moves.end(), std::back_inserter(ret));
+    }
+    return ret;
 }

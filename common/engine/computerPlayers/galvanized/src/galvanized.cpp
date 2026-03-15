@@ -97,56 +97,6 @@ int galvanized::get_taunt()
     return 0;
 }
 
-// Given three blocks of the same color, find the best spot to put those three blocks to clear them.
-std::optional<std::array<spot, 3>> galvanized::get_three_blocks_target(std::array<spot, 3> const & starting_blocks)
-{
-    std::array<spot, 3> ret;
-    for (unsigned i{0}; i < starting_blocks.size(); ++i)
-    {
-        ret[i] = {starting_blocks[i].row, starting_blocks[0].col};
-        //LOG("get_three_blocks_target: Starting block " + std::to_string(i) + " is: " + starting_blocks[i].to_string());
-        //LOG("    Target: " + ret[i].to_string());
-    }
-    return ret;
-}
-
-std::optional<plan> galvanized::create_plan(std::array<spot, 3> const & starting_blocks, std::array<spot, 3> const & target_blocks)
-{
-    plan ret;
-    //LOG("Creating plan for starting blocks: " + starting_blocks[0].to_string() + " " + starting_blocks[1].to_string() + " " + starting_blocks[2].to_string());
-    //LOG("   target blocks: " + target_blocks[0].to_string() + " " + target_blocks[1].to_string() + " " + target_blocks[2].to_string());
-    for (size_t i{0}; i < starting_blocks.size(); ++i)
-    {
-        const int num_flips = starting_blocks[i].col - target_blocks[i].col;
-        if (num_flips == 0)
-            continue;
-        const bool flip_left = num_flips > 0;
-        int flip_spot = starting_blocks[i].col;
-        if (flip_left)
-        {
-            flip_spot -= 1;
-            while (flip_spot >= target_blocks[i].col)
-            {
-                const spot temp_flip_spot {starting_blocks[i].row, flip_spot};
-                // The flip_spot is the left side of the cursor
-                ret.spot_flips.push_back(temp_flip_spot);
-                --flip_spot;
-                //LOG("Adding flip left: " + temp_flip_spot.to_string());
-            }
-        } else {
-            while (flip_spot < target_blocks[i].col)
-            {
-                const spot temp_flip_spot {starting_blocks[i].row, flip_spot};
-                // The flip_spot is the left side of the cursor
-                ret.spot_flips.push_back(temp_flip_spot);
-                ++flip_spot;
-                //LOG("Adding flip rigt: " + temp_flip_spot.to_string());
-            }
-        }
-    }
-    return ret;
-}
-
 void galvanized::wait_for_plan_to_complete(void)
 {
     while (true)
@@ -162,6 +112,11 @@ void galvanized::wait_for_plan_to_complete(void)
     }
 }
 
+static std::array<spot, 3> get_target_blocks(std::array<spot, 3> const & source, unsigned target_column)
+{
+    return {{source[0], {source[0].row, static_cast<int>(target_column)}, {source[0].row, static_cast<int>(target_column)+1}}};
+}
+
 void galvanized::find_three_blocks(void)
 {
     // Don't use first row because it's the hidden row.
@@ -170,35 +125,40 @@ void galvanized::find_three_blocks(void)
         for (int col{0}; col < my_stack.width(); col++)
         {
             spot const start_spot{row,col};
-            std::optional<panel> temp_panel {my_stack.get_panel(start_spot)};
-            if (!temp_panel)
+            std::optional<std::array<spot, 3>> vertical {find_three_blocks_vertical(my_stack, start_spot)};
+            if (vertical)
             {
-                LOG("ERROR: no panel at " + std::to_string(row) + ", " + std::to_string(col));
+                std::optional<unsigned> target {can_get_to_same_column(my_stack, *vertical)};
+                if (!target)
+                    continue;
+                LOG(" got target for 3 verticals");
+                std::optional<plan> plan {create_plan(*vertical, get_target_blocks(*vertical, *target))};
+                if (!plan)
+                    continue;
+                LOG("   got a plan for 3 verticals");
+                {
+                    std::lock_guard<std::mutex> lock(stack_buffer_mutex);
+                    current_plan = plan;
+                }
+                LOG("Plan created, waiting for it to complete");
+                wait_for_plan_to_complete();
                 return;
             }
-            if (temp_panel->color == 0)
+            std::optional<std::array<spot, 3>> horizontal {find_three_blocks_horizontal(my_stack, start_spot)};
+            if (horizontal)
             {
-                continue;
+                std::optional<plan> plan {bring_together_horizontal(*horizontal)};
+                if (!plan)
+                    continue;
+                LOG("   got a plan for 3 horizontals");
+                {
+                    std::lock_guard<std::mutex> lock(stack_buffer_mutex);
+                    current_plan = plan;
+                }
+                LOG("Plan created, waiting for it to complete");
+                wait_for_plan_to_complete();
+                return;
             }
-            std::optional<std::array<spot, 3>> three_blocks {find_three_blocks_vertical(my_stack, start_spot)};
-            if (!three_blocks)
-                continue;
-            LOG("Three vertical blocks found: " + (*three_blocks)[0].to_string() + " " + (*three_blocks)[1].to_string() + " " + (*three_blocks)[2].to_string());
-            std::optional<std::array<spot, 3>> target {get_three_blocks_target(*three_blocks)};
-            if (!target)
-                continue;
-            LOG(" got target for 3 verticals");
-            std::optional<plan> plan {create_plan(*three_blocks, *target)};
-            if (!plan)
-                continue;
-            LOG("   got a plan for 3 verticals");
-            {
-                std::lock_guard<std::mutex> lock(stack_buffer_mutex);
-                current_plan = plan;
-            }
-            LOG("Plan created, waiting for it to complete");
-            wait_for_plan_to_complete();
-            return;
         }
     }
 }
