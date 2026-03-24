@@ -592,9 +592,9 @@ TEST(Algorithms, find_simple_combo)
     st.set_panel(2, 3, {1, "normal"});
     st.set_panel(3, 2, {1, "normal"});
     std::vector<plan> const combos {find_vert_hor_combos(st)};
-    EXPECT_EQ(combos.size(), 1);
+    ASSERT_EQ(combos.size(), 1);
     plan const & combo_plan{combos.front()};
-    EXPECT_EQ(combo_plan.spot_flips.back(), spot(1,1)) << "Last move should be 1,1";
+    EXPECT_EQ(combo_plan.spot_flips.back(), spot(1,2));
 }
 
 TEST(Algorithms, find_middle_combo)
@@ -612,7 +612,7 @@ TEST(Algorithms, find_middle_combo)
     std::vector<plan> const combos {find_vert_hor_combos(st)};
     EXPECT_EQ(combos.size(), 1);
     plan const & combo_plan{combos.front()};
-    EXPECT_EQ(combo_plan.spot_flips.back(), spot(2,2));
+    EXPECT_EQ(combo_plan.spot_flips.back(), spot(2,3));
 }
 
 TEST(Algorithms, find_middle_combo_conflict)
@@ -630,10 +630,10 @@ TEST(Algorithms, find_middle_combo_conflict)
     std::vector<plan> const combos {find_vert_hor_combos(st)};
     EXPECT_EQ(combos.size(), 1);
     plan const & combo_plan{combos.front()};
-    EXPECT_EQ(combo_plan.spot_flips.back(), spot(2,2));
+    EXPECT_EQ(combo_plan.spot_flips.back(), spot(2,3));
 }
 
-TEST(Algorithms, DISABLED_find_simple_combo_chasm)
+TEST(Algorithms, find_simple_combo_chasm_blocked)
 {
     stack st {get_full_unique_stack()};
     // - - x   - -
@@ -651,6 +651,25 @@ TEST(Algorithms, DISABLED_find_simple_combo_chasm)
     st.set_panel(3, 3, {0, "normal"});
     std::vector<plan> const combos {find_vert_hor_combos(st)};
     EXPECT_EQ(combos.size(), 0) << "Can't make combination across chasm";
+}
+
+TEST(Algorithms, find_simple_combo_chasm_workaround)
+{
+    stack st {get_full_unique_stack()};
+    // - - x   - -
+    // - - -   - x
+    // x x - - - x
+    // - - - - - -
+    st.set_panel(1, 0, {1, "normal"});
+    st.set_panel(1, 1, {1, "normal"});
+    st.set_panel(1, 5, {1, "normal"});
+    st.set_panel(2, 5, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    st.set_panel(2, 3, {0, "normal"});
+    st.set_panel(3, 3, {0, "normal"});
+    st.print();
+    std::vector<plan> const combos {find_vert_hor_combos(st)};
+    EXPECT_EQ(combos.size(), 1) << "We can make a combo through the small chasm";
 }
 
 TEST(Algorithms, clear_way_middle)

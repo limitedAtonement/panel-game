@@ -561,12 +561,13 @@ std::optional<bool> finish_hor_vert_combo_left(stack const & st, std::vector<spo
     int hor_count_right{0};
     for (spot const & s : spots)
     {
-        if (s.col != hor_row)
+        if (s.row != hor_row)
             continue;
         if (s.col > vertical_average_col)
             ++hor_count_right;
     } 
-    return hor_count_right < 2;
+    // If most of the horizontal blocks are to the right, we should finish from the left.
+    return hor_count_right > 1;
 }
 
 std::optional<plan> execute_vert_hor_combination(stack const & st, std::vector<spot> const & spots, int hor_row)
@@ -590,44 +591,56 @@ std::optional<plan> execute_vert_hor_combination(stack const & st, std::vector<s
     plan ret;
     vertical_average_col /= vertical_average_count;
     vertical_average_col = std::clamp(vertical_average_col, 1, st.width()-2);
+    std::vector<spot> hor_spots;
+    std::copy_if(spots.begin(), spots.end(), std::back_inserter(hor_spots), [hor_row](spot const & s)
+            {return s.row == hor_row;});
+    if (hor_spots.size() < 3)
+    {
+        LOG("Error, execute_vert_hor_combination: expected at least 3 horizontal spots");
+        return {};
+    }
+    std::vector<spot> target_spots;
     if (finish_left)
     {
         // Get two blocks right of the vertical column and one left
-        std::vector<spot> hor_spots;
-        std::copy_if(spots.begin(), spots.end(), std::back_inserter(hor_spots), [hor_row](spot const & s)
-                {return s.row == hor_row;});
-        if (hor_spots.size() < 3)
-        {
-            LOG("Error, execute_vert_hor_combination: expected at least 3 horizontal spots");
-            return {};
-        }
-        std::vector<spot> target_spots{{hor_row, vertical_average_col-1},
+        target_spots = {{hor_row, vertical_average_col-1},
                 {hor_row, vertical_average_col+1}, {hor_row, vertical_average_col+2}};
-        std::optional<std::vector<spot>> horizontal_plan{move_horizontal_blocks(hor_spots, target_spots)};
-        if (!horizontal_plan)
+    }
+    else
+    {
+        target_spots = {{hor_row, vertical_average_col+1}, {hor_row, vertical_average_col-1},
+            {hor_row, vertical_average_col-2}};
+    }
+    std::optional<std::vector<spot>> horizontal_plan{move_horizontal_blocks(hor_spots, target_spots)};
+    if (!horizontal_plan)
+    {
+        LOG("Error? execute_vert_hor_combination, failed to move horizontal blocks");
+        return {};
+    }
+    std::copy(horizontal_plan->begin(), horizontal_plan->end(), std::back_inserter(ret.spot_flips));
+    // Now get the vertical blocks in line
+    for (spot const & s : spots)
+    {
+        if (s.row == hor_row)
+            continue;
+        std::optional<std::vector<spot>> temp_plan{move_panel(s, {s.row, vertical_average_col})};
+        if (!temp_plan)
         {
-            LOG("Error? execute_vert_hor_combination, failed to move horizontal blocks");
+            LOG("Error? execute_vert_hor_combination, failed to move vertical block into place");
             return {};
         }
-        std::copy(horizontal_plan->begin(), horizontal_plan->end(), std::back_inserter(ret.spot_flips));
-        // Got the horizontal part in line
-        for (spot const & s : spots)
-        {
-            if (s.row == hor_row)
-                continue;
-            std::optional<std::vector<spot>> temp_plan{move_panel(s, {s.row, vertical_average_col})};
-            if (!temp_plan)
-            {
-                LOG("Error? execute_vert_hor_combination, failed to move vertical block into place");
-                return {};
-            }
-            std::copy(temp_plan->begin(), temp_plan->end(), std::back_inserter(ret.spot_flips));
-        }
-        // Add the last move
-        ret.spot_flips.push_back({hor_row, vertical_average_col-1});
-        return ret;
+        std::copy(temp_plan->begin(), temp_plan->end(), std::back_inserter(ret.spot_flips));
     }
-    return {};
+    // Add the last move
+    if (finish_left)
+    {
+        ret.spot_flips.push_back({hor_row, vertical_average_col-1});
+    }
+    else
+    {
+        ret.spot_flips.push_back({hor_row, vertical_average_col});
+    }
+    return ret;
 }
 
 std::vector<plan> find_vert_hor_combos(stack const & st)
