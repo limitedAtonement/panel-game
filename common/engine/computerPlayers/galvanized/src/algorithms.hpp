@@ -7,6 +7,11 @@
 #include <algorithm>
 #include <optional>
 
+bool good_base(panel const & p);
+bool can_pass_through(panel const & p);
+bool can_match(panel const & p);
+bool can_swap(panel const & p);
+
 std::optional<std::array<spot, 3>> find_three_blocks_vertical(stack const &, spot const & start_spot);
 std::optional<std::array<spot, 3>> find_three_blocks_horizontal(stack const &, spot const & start_spot);
 // Only looks at the start_spot row.

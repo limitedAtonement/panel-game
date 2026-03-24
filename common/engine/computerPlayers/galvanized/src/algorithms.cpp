@@ -88,25 +88,25 @@ std::optional<plan> bring_together_horizontal(std::array<spot, 3> const & source
     return create_plan(sorted_blocks, target_blocks);
 }
 
-static bool good_base(panel const & p)
+bool good_base(panel const & p)
 {
     return p.color != 0 && p.state != "falling" && p.state != "popped";
 }
 
-static bool can_pass_through(panel const & p)
+bool can_pass_through(panel const & p)
 {
     return p.state != "popping" && p.state != "matched" && p.state != "popped" &&
             p.state != "dimmed" && p.state != "falling";
 }
 
-static bool can_match(panel const & p)
+bool can_match(panel const & p)
 {
     if (!p.color)
         return false;
-    return p.state == "normal";
+    return p.state == "normal" || p.state == "landing";
 }
 
-static bool can_swap(panel const & p)
+bool can_swap(panel const & p)
 {
     if (!p.color)
         return false;

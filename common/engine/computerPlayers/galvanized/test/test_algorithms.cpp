@@ -2,6 +2,7 @@
 #include "utils.hpp"
 #include "algorithms.hpp"
 #include "stack.hpp"
+#include "test_utils.hpp"
 
 unsigned const rows {12};
 stack get_stack(void)
@@ -15,24 +16,6 @@ stack get_stack(void)
         for (unsigned col{0}; col < cols; ++col)
         {
             st.set_panel(row,col, {static_cast<int>((row+col)%6+1), row == 0 ? "dimmed" : "normal"});
-        }
-    }
-    return st;
-}
-
-// Returns a stack with 60 unique colors: [10,70].
-// Make patterns with numbers below 10 to be sure they are unique.
-stack get_full_unique_stack(void)
-{
-    unsigned const cols {6};
-    stack st(rows, cols);
-    unsigned const fill_rows{rows-2};
-    int color{10};
-    for (unsigned row{0}; row < fill_rows; ++row)
-    {
-        for (unsigned col{0}; col < cols; ++col)
-        {
-            st.set_panel(row,col, {color++, row == 0 ? "dimmed" : "normal"});
         }
     }
     return st;
@@ -667,7 +650,6 @@ TEST(Algorithms, find_simple_combo_chasm_workaround)
     st.set_panel(3, 2, {1, "normal"});
     st.set_panel(2, 3, {0, "normal"});
     st.set_panel(3, 3, {0, "normal"});
-    st.print();
     std::vector<plan> const combos {find_vert_hor_combos(st)};
     EXPECT_EQ(combos.size(), 1) << "We can make a combo through the small chasm";
 }

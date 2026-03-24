@@ -17,3 +17,10 @@ std::string plan::to_string(void) const
     ret << '}';
     return ret.str();
 }
+
+bool operator<(spot const & lhs, spot const & rhs)
+{
+    if (lhs.row < rhs.row)
+        return true;
+    return lhs.col < rhs.col;
+}

@@ -15,6 +15,8 @@ struct spot
     std::string to_string(void) const;
 };
 
+bool operator<(spot const &, spot const &);
+
 struct plan
 {
     // A flip spot is the left side of the cursor when the flip happens
