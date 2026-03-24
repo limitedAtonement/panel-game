@@ -11,9 +11,24 @@ std::optional<std::array<spot, 3>> find_three_blocks_vertical(stack const &, spo
 std::optional<std::array<spot, 3>> find_three_blocks_horizontal(stack const &, spot const & start_spot);
 // Only looks at the start_spot row.
 bool can_get_there(stack const &, const spot & whence, const spot & whither);
+// Finds the best combo with horizontal component on the stack
+std::vector<plan> find_vert_hor_combos(stack const &);
+// Given some spots in a vertical and horizontal combination, returns a plan to execute it
+std::optional<plan> execute_vert_hor_combination(stack const & st, std::vector<spot> const & spots, int hor_row);
 int increment_column_diff(int old_column_diff);
 // Returns a vector of flips that can be added to a plan to move a panel from one spot to another
 std::vector<spot> move_panel(spot const & whence, spot const & whither);
+
+// Given a row in which we want to move a panel, come up with a plan
+// to make sure the desired panel can move without making a combination.
+std::optional<plan> clear_way(stack const & st, int row, int start_col, int end_col, int color);
+
+// Returns true if the last block in the vertical combination should be added from the left.
+//  - - x - -
+//  - x - x x
+//  - - x - -
+//  - - x - -
+std::optional<bool> finish_hor_vert_combo_left(stack const & st, std::vector<spot> const & spots, int hor_row);
 
 // Returns flips to move source blocks to target blocks
 // This isn't trivial because moving one block may mess up another block.
@@ -23,6 +38,9 @@ std::vector<spot> move_horizontal_blocks(std::vector<spot> const & source_spots,
 
 // Creates a plan to move the horizontal source blocks together
 std::optional<plan> bring_together_horizontal(std::array<spot, 3> const &);
+
+// Returns the blocks in the vertical combinations available
+std::vector<std::vector<spot>> find_vertical_combinations(stack const &);
 
 // Creates a plan to move the starting blocks to the target blocks
 template<typename collection_t>

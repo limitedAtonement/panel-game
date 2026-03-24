@@ -120,9 +120,9 @@ static std::array<spot, 3> get_target_blocks(std::array<spot, 3> const & source,
 void galvanized::find_three_blocks(void)
 {
     // Don't use first row because it's the hidden row.
-    for (int row{1}; row < my_stack.height(); row++)
+    for (int row{1}; row < my_stack.height(); ++row)
     {
-        for (int col{0}; col < my_stack.width(); col++)
+        for (int col{0}; col < my_stack.width(); ++col)
         {
             spot const start_spot{row,col};
             std::optional<std::array<spot, 3>> vertical {find_three_blocks_vertical(my_stack, start_spot)};

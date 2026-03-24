@@ -20,6 +20,24 @@ stack get_stack(void)
     return st;
 }
 
+// Returns a stack with 60 unique colors: [10,70].
+// Make patterns with numbers below 10 to be sure they are unique.
+stack get_full_unique_stack(void)
+{
+    unsigned const cols {6};
+    stack st(rows, cols);
+    unsigned const fill_rows{rows-2};
+    int color{10};
+    for (unsigned row{0}; row < fill_rows; ++row)
+    {
+        for (unsigned col{0}; col < cols; ++col)
+        {
+            st.set_panel(row,col, {color++, row == 0 ? "dimmed" : "normal"});
+        }
+    }
+    return st;
+}
+
 TEST(Algorithms, can_get_there_normal)
 {
     stack st {get_stack()};
@@ -369,7 +387,6 @@ TEST(Algorithms, move_horizontal_blocks_3_blocks_in)
     bool got_3{false};
     for (auto const & flip : flips)
     {
-        std::cout << " flipping at "  << flip.col  << "\n";
         if (flip == spot(3,0))
             got_1 = true;
         if (flip == spot(3,2))
@@ -464,3 +481,222 @@ TEST(Algorithms, move_horizontal_blocks_3_blocks_left)
     EXPECT_TRUE(got_2);
     EXPECT_TRUE(got_3);
 }
+
+TEST(Algorithms, DISABLED_clear_way_simple)
+{
+    stack st {get_full_unique_stack()};
+
+}
+
+TEST(Algorithms, find_vertical_combination_3)
+{
+    stack st {get_full_unique_stack()};
+    // - - x o - -
+    // - - - x o -
+    // - - - - x o
+    st.set_panel(1, 4, {1, "normal"});
+    st.set_panel(2, 3, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    st.set_panel(1, 5, {2, "normal"});
+    st.set_panel(2, 4, {2, "normal"});
+    st.set_panel(3, 3, {2, "normal"});
+    std::vector<std::vector<spot>> const combos {find_vertical_combinations(st)};
+    EXPECT_EQ(combos.size(), 2);
+    bool got_1{false};
+    bool got_2{false};
+    const std::function<bool(spot const &, std::vector<spot> const &)> has_spot =
+                [](spot const & sp, std::vector<spot> const & vertical) {
+        return std::find(vertical.begin(), vertical.end(), sp) != vertical.end();
+    };
+    for (std::vector<spot> const & vertical : combos)
+    {
+        if (has_spot({1,4}, vertical) && has_spot({2,3}, vertical) && has_spot({3,2}, vertical))
+            got_1 = true;
+        else if (has_spot({1,5}, vertical) && has_spot({2,4}, vertical) && has_spot({3,3}, vertical))
+            got_2 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, find_vertical_combination_4)
+{
+    stack st {get_full_unique_stack()};
+    // x o - - - -
+    // - - x o - -
+    // - - - x o -
+    // - - - - x o
+    // - - - - - -
+    // - - - - - -
+    st.set_panel(2, 4, {1, "normal"});
+    st.set_panel(3, 3, {1, "normal"});
+    st.set_panel(4, 2, {1, "normal"});
+    st.set_panel(5, 0, {1, "normal"});
+    st.set_panel(2, 5, {2, "normal"});
+    st.set_panel(3, 4, {2, "normal"});
+    st.set_panel(4, 3, {2, "normal"});
+    st.set_panel(5, 1, {2, "normal"});
+    std::vector<std::vector<spot>> const combos {find_vertical_combinations(st)};
+    EXPECT_EQ(combos.size(), 2) << "After deduplication, we should only have the two 4-combos";
+    bool got_1{false};
+    bool got_2{false};
+    const std::function<bool(spot const &, std::vector<spot> const &)> has_spot =
+                [](spot const & sp, std::vector<spot> const & vertical) {
+        return std::find(vertical.begin(), vertical.end(), sp) != vertical.end();
+    };
+    for (std::vector<spot> const & vertical : combos)
+    {
+        if (vertical.size() == 3)
+            continue;
+        if (has_spot({2,4}, vertical) && has_spot({3,3}, vertical) &&
+                    has_spot({4,2}, vertical) && has_spot({5,0}, vertical))
+            got_1 = true;
+        else if (has_spot({2,5}, vertical) && has_spot({3,4}, vertical) &&
+                        has_spot({4,3}, vertical) && has_spot({5,1}, vertical))
+            got_2 = true;
+    }
+    EXPECT_TRUE(got_1);
+    EXPECT_TRUE(got_2);
+}
+
+TEST(Algorithms, find_vertical_combination_chasm)
+{
+    stack st {get_full_unique_stack()};
+    // x -   - - -
+    // - x   - - -
+    // - -   x - -
+    // - -   - x -
+    // - - - - - -
+    st.set_panel(1, 4, {1, "normal"});
+    st.set_panel(2, 3, {1, "normal"});
+    st.set_panel(3, 1, {1, "normal"});
+    st.set_panel(4, 1, {1, "normal"});
+    st.set_panel(1, 2, {0, "normal"});
+    st.set_panel(2, 2, {0, "normal"});
+    st.set_panel(3, 2, {0, "normal"});
+    st.set_panel(4, 2, {0, "normal"});
+    std::vector<std::vector<spot>> const combos {find_vertical_combinations(st)};
+    EXPECT_EQ(combos.size(), 0) << "No combinations should be found because of the chasm";
+}
+
+TEST(Algorithms, find_simple_combo)
+{
+    stack st {get_full_unique_stack()};
+    // - - x - - -
+    // - - - x - -
+    // x x - - x -
+    // - - - - - -
+    st.set_panel(1, 0, {1, "normal"});
+    st.set_panel(1, 1, {1, "normal"});
+    st.set_panel(1, 4, {1, "normal"});
+    st.set_panel(2, 3, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    std::vector<plan> const combos {find_vert_hor_combos(st)};
+    EXPECT_EQ(combos.size(), 1);
+    plan const & combo_plan{combos.front()};
+    EXPECT_EQ(combo_plan.spot_flips.back(), spot(1,1)) << "Last move should be 1,1";
+}
+
+TEST(Algorithms, find_middle_combo)
+{
+    stack st {get_full_unique_stack()};
+    // - - x - - -
+    // x x - x - -
+    // - - - - x -
+    // - - - - - -
+    st.set_panel(1, 4, {1, "normal"});
+    st.set_panel(2, 0, {1, "normal"});
+    st.set_panel(2, 1, {1, "normal"});
+    st.set_panel(2, 3, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    std::vector<plan> const combos {find_vert_hor_combos(st)};
+    EXPECT_EQ(combos.size(), 1);
+    plan const & combo_plan{combos.front()};
+    EXPECT_EQ(combo_plan.spot_flips.back(), spot(2,2));
+}
+
+TEST(Algorithms, find_middle_combo_conflict)
+{
+    stack st {get_full_unique_stack()};
+    // - - x - - -
+    // x - x x - -
+    // - - - - x -
+    // - - - - - -
+    st.set_panel(1, 4, {1, "normal"});
+    st.set_panel(2, 0, {1, "normal"});
+    st.set_panel(2, 1, {1, "normal"});
+    st.set_panel(2, 3, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    std::vector<plan> const combos {find_vert_hor_combos(st)};
+    EXPECT_EQ(combos.size(), 1);
+    plan const & combo_plan{combos.front()};
+    EXPECT_EQ(combo_plan.spot_flips.back(), spot(2,2));
+}
+
+TEST(Algorithms, DISABLED_find_simple_combo_chasm)
+{
+    stack st {get_full_unique_stack()};
+    // - - x   - -
+    // - - -   x -
+    // x x -   x -
+    // - - -   - -
+    st.set_panel(1, 0, {1, "normal"});
+    st.set_panel(1, 1, {1, "normal"});
+    st.set_panel(1, 4, {1, "normal"});
+    st.set_panel(2, 4, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    st.set_panel(0, 3, {0, "normal"});
+    st.set_panel(1, 3, {0, "normal"});
+    st.set_panel(2, 3, {0, "normal"});
+    st.set_panel(3, 3, {0, "normal"});
+    std::vector<plan> const combos {find_vert_hor_combos(st)};
+    EXPECT_EQ(combos.size(), 0) << "Can't make combination across chasm";
+}
+
+TEST(Algorithms, clear_way_middle)
+{
+    stack st {get_full_unique_stack()};
+    // - - x - - -
+    // - x - - - -
+    // - - x - - -
+    // - - - - - -
+    st.set_panel(1, 2, {1, "normal"});
+    st.set_panel(2, 1, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    std::optional<plan> plan {clear_way(st, 2, 1, 3, 1)};
+    EXPECT_TRUE(plan);
+    EXPECT_GT(plan->spot_flips.size(), 0);
+}
+
+TEST(Algorithms, clear_way_middle_harder)
+{
+    stack st {get_full_unique_stack()};
+    // - - x - - -
+    // - x - - - -
+    // - - x x - -
+    // - - - - - -
+    st.set_panel(1, 2, {1, "normal"});
+    st.set_panel(1, 3, {1, "normal"});
+    st.set_panel(2, 1, {1, "normal"});
+    st.set_panel(3, 2, {1, "normal"});
+    std::optional<plan> plan {clear_way(st, 2, 1, 3, 1)};
+    EXPECT_TRUE(plan);
+    EXPECT_GT(plan->spot_flips.size(), 0);
+    EXPECT_NE(plan->spot_flips.front(), spot(2, 2)) << "Can't flip at (2,2) because that creates another barrier";
+}
+
+// If one of the blocks can't be matched (dimmed), we don't need to clear the way.
+TEST(Algorithms, clear_way_middle_no_match)
+{
+    stack st {get_full_unique_stack()};
+    // - - x - - -
+    // - x - - - -
+    // - - x x - -  dimmed
+    st.set_panel(0, 2, {1, "dimmed"});
+    st.set_panel(0, 3, {1, "dimmed"});
+    st.set_panel(1, 1, {1, "normal"});
+    st.set_panel(2, 2, {1, "normal"});
+    std::optional<plan> plan {clear_way(st, 1, 1, 3, 1)};
+    EXPECT_FALSE(plan) << "No need to clear anything because blocks can't match anyway";
+}
+
